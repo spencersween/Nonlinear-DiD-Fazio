@@ -1,22 +1,47 @@
-# AI-Generated Academic Paper: Replicating and Extending "Universal Vote-by-Mail Has No Impact on Partisan Turnout or Vote Share"
+# AI-Generated Academic Paper: Completing "Semi-parametric Non-linear Difference-in-Differences for Policy Evaluation: New Evidence on the Entrepreneurial Impacts of State Business Tax Credits"
 
 ## Project Overview
 
-You are tasked with producing a complete academic political science paper by replicating and extending Thompson, Wu, Yoder, and Hall (2020), published in PNAS. The original paper used a difference-in-differences design to estimate the causal effects of universal vote-by-mail (VBM) on partisan electoral outcomes, finding null partisan effects and a modest (~2 percentage point) increase in overall turnout.
+You are tasked with completing an academic econometrics paper that:
 
-**Your task**:
-1. Replicate the original findings using the authors' published replication data and code
-2. Extend the analysis by collecting new data for the same three states (California, Utah, Washington) through 2024
-3. Test whether the null partisan findings hold in the post-COVID era
+1. **Replicates** Fazio, Guzman, and Stern (2020), published in *Economic Development Quarterly*, which used TWFE difference-in-differences to estimate the causal effects of state R&D tax credits on county-level entrepreneurial outcomes.
 
-**Original paper**: https://www.pnas.org/doi/10.1073/pnas.2007249117
-**Original replication materials**: https://github.com/stanford-dpl/vbm
+2. **Extends** the analysis using new semi-parametric difference-in-differences estimators developed in Sween (2026) for settings with count, discrete, or bounded outcomes where nonlinear parallel trend assumptions are more appropriate.
+
+3. **Compares** standard approaches (log-plus-one transformations with linear parallel trends) to outcome-consistent nonlinear methods (log-mean parallel trends with debiased machine learning).
+
+### Background
+
+**The Original Paper (Fazio, Guzman, and Stern 2020):**
+- Used TWFE diff-in-diff to study state R&D tax credits' effects on entrepreneurship
+- Found significant positive effects on startup formation, insignificant effects on quality
+- Applied log-plus-one transformations to count outcomes
+- Suffers from two methodological issues:
+  1. Log-plus-one transformations are invalid for causal inference (Chen and Roth 2024, QJE)
+  2. TWFE is biased in staggered adoption settings (Goodman-Bacon 2021)
+
+**The New Framework (Sween 2026):**
+- Develops semi-parametric DiD estimators for discrete/bounded/count outcomes
+- Imposes parallel trends on outcome-consistent link scales (e.g., log-mean for counts)
+- Accommodates continuous treatment intensity
+- Allows flexible ML-based covariate adjustment via Automatic Debiased Machine Learning
+- Similar to Wooldridge (2023) but with ML nuisance estimation
+
+### Your Task
+
+1. **Replicate** the original Fazio et al. findings using their empirical strategy
+2. **Apply** the Callaway-Sant'Anna (2021) estimator to address staggered adoption
+3. **Implement** the nonlinear DiD estimators from Sween (2026)
+4. **Compare** log-plus-one DML to nonlinear AutoDML approaches
+5. **Investigate** extensions, heterogeneity, and robustness
+6. **Complete** missing results, proofs, and text in the Sween (2026) draft
+7. **Write** a professional, Econometrics Journal-quality article
 
 ---
 
 ## IMPORTANT: Stop-and-Check Points
 
-Throughout this project, there are mandatory **STOP AND CHECK** points marked with 🛑. At each of these points, you must:
+Throughout this project, there are mandatory **STOP AND CHECK** points marked with 🛑. At each checkpoint:
 1. Summarize what you have completed
 2. Present key outputs for review
 3. List any issues or concerns
@@ -26,29 +51,32 @@ Do not proceed past a 🛑 checkpoint without explicit approval.
 
 ---
 
-## PHASE 0: Project Setup and Original Materials
+## PHASE 0: Project Setup and Materials Review
 
-### Task 0.1: Create Project Structure
+### Task 0.1: Project Directory Structure
 
-Create the following directory structure:
+The project uses the following structure:
 
 ```
-vbm_replication/
+Nonlinear-DiD-Fazio/
 ├── README.md
 ├── INSTRUCTIONS.md
-├── requirements.txt
-├── original/                    # Original paper materials
-│   ├── code/
-│   ├── data/
-│   │   ├── raw/
-│   │   └── modified/
-│   └── paper/
-├── code/                        # Your analysis code
+├── Sween (2026).pdf              # Draft paper to complete
+├── Fazio, Guzman, Stern (2020).pdf  # Original paper to replicate
+├── original/
+│   ├── raw/                      # Raw data files (.dta from original sources)
+│   ├── modified/                 # Intermediate processed data (.csv)
+│   ├── final/                    # Final analysis dataset
+│   │   └── scp_pdit_county.csv
+│   └── code/
+│       ├── data_cleaning.do      # Stata data preparation
+│       └── analysis.R            # R analysis code
+├── code/                         # Your analysis code
 ├── data/
-│   ├── raw/                     # Downloaded data
-│   ├── processed/               # Cleaned datasets
-│   └── extension/               # New 2020-2024 data
-├── notes/                       # Documentation
+│   ├── raw/
+│   ├── processed/
+│   └── extension/
+├── notes/                        # Documentation
 ├── output/
 │   ├── tables/
 │   ├── figures/
@@ -56,171 +84,326 @@ vbm_replication/
 └── logs/
 ```
 
-### Task 0.2: Download Original Replication Materials
+### Task 0.2: Review Original Materials
 
-Clone or download the original replication repository:
-```
-https://github.com/stanford-dpl/vbm
-```
+The repository contains:
 
-This repository contains:
-- **code/**: Stata .do files with the original analysis
-- **original data/**: Raw data sources
-- **modified data/**: Cleaned analysis datasets
+**Data Files:**
+- `original/raw/`: Raw data from PDIT and Startup Cartography Project
+- `original/final/scp_pdit_county.csv`: Final merged county-year panel
 
-Save these to the `original/` directory in your project.
+**Code Files:**
+- `original/code/data_cleaning.do`: Stata script for data preparation
+- `original/code/analysis.R`: R script with DiD estimators
 
-### Task 0.3: Examine Original Code and Data
+### Task 0.3: Understand the Data Structure
 
-Carefully review the original materials:
+The main analysis dataset (`scp_pdit_county.csv`) contains:
 
-1. **Identify the main analysis script**: Look for the .do file that produces Tables 2 and 3
-2. **Understand the data structure**: Examine the modified/analysis datasets
-3. **Document variable definitions**: What is each variable and how is it constructed?
-4. **Note the Stata commands used**: What regression commands, options, and packages?
+**Identifiers:**
+- `state_abr`, `state`, `county`: Geographic identifiers
+- `statefips`, `countyfips`: FIPS codes
+- `year`: Year (1990-2010)
 
-Create `notes/original_materials_review.md` documenting:
-- File inventory (what's in each folder)
-- Main analysis workflow
-- Key variable definitions from the data
-- Stata commands that need Python equivalents
+**Treatment Variables:**
+- `G_rnd`: R&D tax credit adoption cohort (0 = never treated)
+- `rnd`: R&D tax credit rate
+- `has_rnd`: Binary indicator for R&D credit
+- `avg_rnd`: 10-year average R&D credit intensity
+- `G_itc`, `itc`, `has_itc`, `avg_itc`: Investment tax credit variables
+- `G_both`, `has_both`: Combined treatment indicators
 
-### Task 0.4: Translate Stata to Python (Conceptually)
+**Outcome Variables:**
+- `sfr`: Startup Formation Rate (count of new firms)
+- `log_sfr`, `log1p_sfr`, `asinh_sfr`: Transformed versions
+- `sfr_per1k`: Startups per 1,000 population
+- `eqi`: Entrepreneurial Quality Index
+- `growth`: High-growth firm indicator
 
-The original code is in Stata. You will work in Python. Document the key translations needed:
+**Covariates (X_ prefix):**
+- `X_pop_1990`: Log population
+- `X_total_emp`, `X_total_wage`: Employment and wage measures
+- `X_sfr`, `X_eqi`, `X_growth`: Baseline outcome values
+- Industry-specific employment shares
+- Historical population measures
 
-| Stata Command | Python Equivalent | Notes |
-|--------------|-------------------|-------|
-| `reghdfe` | `linearmodels.PanelOLS` or `statsmodels` | High-dimensional fixed effects |
-| `cluster()` | Clustered standard errors option | Must specify clustering |
-| `absorb()` | Entity/time effects in panel model | Fixed effects |
+**Parsimonious Covariates (Z variables):**
+- `Z1`: Log population (1990)
+- `Z2`: Log employment-to-population ratio
+- `Z3`: Log average wage
+- `Z4`: Log baseline SFR
+- `Z5`: Any startups indicator
+- `Z6`: Baseline EQI (logit-transformed)
+- `Z7`: Baseline growth indicator
 
-Note: You may discover additional packages are needed. Install as necessary but document all dependencies.
+**Sample Indicators:**
+- `Sample_rnd`: Include in R&D credit analysis
+- `Sample_itc`: Include in ITC analysis
+- `Sample_both`: Include in combined analysis
+
+### Task 0.4: Review the Analysis Code
+
+The R analysis code (`analysis.R`) implements:
+
+1. **Callaway-Sant'Anna wrapper** (`csdid`): Calls `did::att_gt()` with custom estimators
+
+2. **Linear Parallel Trends Estimators:**
+   - `my_nox_linear`: No covariates, simple means
+   - `my_drreg_linear`: Doubly-robust GLM
+   - `my_drml_linear`: Doubly-robust GRF (machine learning)
+
+3. **Nonlinear Parallel Trends Estimators:**
+   - `my_nox_nonlinear`: No covariates, ratio estimator
+   - `my_noreg_nonlinear`: Neyman-orthogonal Poisson GLM
+   - `my_noml_nonlinear`: Neyman-orthogonal GRF
+
+Each estimator returns ATT estimates and influence functions compatible with the `did` package.
 
 ---
 
 ## 🛑 CHECKPOINT 0: Project Setup Complete
 
 **Before proceeding, confirm:**
-- [ ] Project directory structure created
-- [ ] Original replication materials downloaded
-- [ ] Original code reviewed and documented
-- [ ] Data files inventory complete
-- [ ] Key Stata-to-Python translations identified
+- [ ] Project directory structure understood
+- [ ] Data files located and dimensions verified
+- [ ] Variable definitions documented
+- [ ] Analysis code reviewed and understood
+- [ ] Estimator functions comprehended
 
 **Present for review:**
-1. Contents of `notes/original_materials_review.md`
-2. List of original data files and their dimensions (rows × columns)
-3. Any issues accessing the original materials
+1. Summary of data structure (N observations, N counties, N years)
+2. List of treatment and outcome variables
+3. Description of the six estimator functions
+4. Any issues or questions about the materials
 
 **STOP and wait for approval to proceed to Phase 1.**
 
 ---
 
-## PHASE 1: Literature Review and Background Research
+## PHASE 1: Literature Review and Background
 
-### Task 1.1: Summarize the Original Paper
+### Task 1.1: Summarize Fazio, Guzman, and Stern (2020)
 
-Read the original paper carefully. Create `notes/original_paper_summary.md` containing:
+Create `notes/original_paper_summary.md` containing:
 
 **1. Research Question**
-- What causal question does the paper address?
-- Why does it matter (policy relevance)?
+- What is the causal effect of state R&D tax credits on entrepreneurship?
+- Policy relevance: Do tax incentives stimulate innovation and firm formation?
 
-**2. Identification Strategy**
-- What is the source of variation?
-- What is the key identifying assumption?
-- Why is the staggered county-level rollout valuable?
+**2. Data Sources**
+- Startup Cartography Project (SCP): County-level entrepreneurship measures
+- Panel Database of Incentives and Taxes (PDIT): State tax credit policies
+- Sample period: 1990-2010
+- Unit of analysis: County-year
 
-**3. Data**
-- What three states are included and why?
-- What is the time period covered?
-- What are the key outcome variables?
-- What is the unit of analysis?
+**3. Identification Strategy**
+- Two-way fixed effects (TWFE) difference-in-differences
+- Exploits staggered adoption of R&D tax credits across states
+- County and state-year fixed effects
+- Key assumption: Parallel trends in (transformed) outcomes
 
-**4. Main Specifications**
-Write out the estimating equation:
-```
-Y_cst = β(VBM_cst) + γ_cs + δ_st + ε_cst
-```
-Explain each term.
+**4. Outcome Transformations**
+- Log-plus-one transformation: log(1 + Y)
+- Applied to count outcomes (startup counts)
+- Motivation: Proportional interpretation, handle zeros
 
-**5. Key Findings**
-Document the main results from Tables 2 and 3:
+**5. Main Findings**
+- Positive effects on startup quantity (formation counts)
+- Weaker/insignificant effects on startup quality
+- Effects persist over longer horizons
 
-*Table 2 - Partisan Outcomes:*
-| Outcome | Basic | Linear Trends | Quad Trends |
-|---------|-------|---------------|-------------|
-| Dem turnout share | 0.007 (0.003) | 0.001 (0.001) | 0.001 (0.001) |
-| Dem vote share | 0.028 (0.011) | 0.011 (0.004) | 0.007 (0.003) |
+**6. Methodological Issues**
+- Log-plus-one is invalid for causal effects (Chen and Roth 2024)
+- TWFE biased with staggered adoption (Goodman-Bacon 2021)
+- Limited covariate adjustment
 
-*Table 3 - Participation Outcomes:*
-| Outcome | Basic | Linear Trends | Quad Trends |
-|---------|-------|---------------|-------------|
-| Turnout | 0.021 (0.009) | 0.022 (0.007) | 0.021 (0.008) |
-| VBM share | 0.186 (0.027) | 0.157 (0.035) | 0.136 (0.085) |
+### Task 1.2: Extensive Literature Review
 
-**6. Robustness Checks**
-- What additional analyses do they perform?
-- State-by-state results?
-- Event study specifications?
+Create a comprehensive literature review in `notes/literature_review.md`. This review should be publication-quality and form the basis for Section 2 of the paper. Organize into the following subsections:
 
-### Task 1.2: Literature Review
+---
 
-Search for and summarize the relevant literature. For **each paper you cite**, you must:
-1. Search for the paper to verify it exists
-2. Find the actual publication details (journal, year, volume, pages)
-3. Read at least the abstract and results
+#### 1.2.1: Difference-in-Differences Methodology (Core)
 
-**Required papers to find and summarize:**
+**Foundational DiD Papers:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Ashenfelter & Card | 1985 | REStat | Classic DiD application | Foundation of method |
+| Bertrand, Duflo, Mullainathan | 2004 | QJE | Serial correlation in DiD | Clustering guidance |
+| Angrist & Pischke | 2009 | Book | "Mostly Harmless" DiD chapter | Textbook treatment |
 
-*Foundational VBM studies:*
-- Gerber, Huber, and Hill (2013) - Washington State VBM analysis
-- Kousser and Mullin (2007) - VBM and participation
-- Southwell and Burchett (2000) - All-mail elections
-- Gronke et al. (2008) - Convenience voting review
-- Berinsky, Burns, and Traugott (2001) - Who votes by mail
+**Staggered Adoption and Heterogeneous Treatment Effects:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Goodman-Bacon | 2021 | JoE | TWFE decomposition theorem | Motivates moving beyond TWFE |
+| Callaway & Sant'Anna | 2021 | JoE | Group-time ATT framework | Primary estimation framework |
+| Sun & Abraham | 2021 | JoE | Interaction-weighted estimator | Alternative robust estimator |
+| de Chaisemartin & D'Haultfœuille | 2020 | AER | Negative weights in TWFE | Documents TWFE problems |
+| Borusyak, Jaravel, Spiess | 2024 | ReStud | Imputation estimator | Alternative approach |
+| Athey & Imbens | 2022 | JoE | Design-based DiD | Theoretical foundations |
+| Roth | 2022 | AER:I | Pre-testing issues | Caution on pre-trend tests |
+| Rambachan & Roth | 2023 | ReStud | Sensitivity to parallel trends | Robustness framework |
+| Freyaldenhoven et al. | 2019 | AER | Proxy controls for PT violations | Alternative identification |
 
-*Post-2020 studies (search for these):*
-- Any papers examining VBM effects during/after COVID-19
-- Studies of the 2020 election and mail voting
+**For each paper, document:**
+- Exact citation (journal, volume, pages)
+- Main theoretical result or methodological contribution
+- How it informs our empirical strategy
+- Any limitations or caveats noted by authors
 
-*Methodological papers on staggered diff-in-diff:*
-- Goodman-Bacon (2021) - Difference-in-differences with variation in treatment timing
-- Callaway and Sant'Anna (2021) - Difference-in-differences with multiple time periods
-- Sun and Abraham (2021) - Event study estimation
+---
 
-Create `notes/literature_review.md` with a summary table:
+#### 1.2.2: Nonlinear Difference-in-Differences
 
-| Authors | Year | Journal | Topic | Key Finding | Verified? |
-|---------|------|---------|-------|-------------|-----------|
-| ... | ... | ... | ... | ... | Yes/No |
+**Nonlinear Parallel Trends and Functional Form:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Wooldridge | 2023 | Econometrics J | Nonlinear DiD for counts, Poisson QMLE | Direct methodological predecessor |
+| Wooldridge | 2021 | JBES | Two-way Mundlak regression | Correlated random effects approach |
+| Athey & Imbens | 2006 | Econometrica | Changes-in-changes | Nonparametric DiD |
+| Bonhomme & Sauder | 2011 | ReStud | Distributional DiD | Quantile approaches |
+| Melly & Santangelo | 2015 | JBES | Quantile DiD | Distribution-free methods |
 
-**CRITICAL**: Mark each paper as "Verified" only if you confirmed it exists. If you cannot verify a paper, do not include it.
+**The Log Transformation Problem:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Chen & Roth | 2024 | QJE | Log-like transformations don't identify causal effects | **Central motivation** |
+| Mullahy & Norton | 2022 | JBES | Interpreting log-transformed outcomes | Interpretation issues |
+| Bellemare & Wichman | 2020 | AJAE | IHS transformation critique | Alternative transformation problems |
+| Santos Silva & Tenreyro | 2006 | REStat | PPML for gravity | Poisson alternative to logs |
+| Santos Silva & Tenreyro | 2011 | EL | Log of gravity critique | Why logs fail with zeros |
 
-### Task 1.3: Document the Extension Rationale
+**Count Data and Zero-Inflation:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Cameron & Trivedi | 2013 | Book | Count data econometrics | Reference for Poisson |
+| Mullainathan & Spiess | 2017 | JEP | ML for prediction vs. inference | When ML helps |
+| Wooldridge | 2010 | Book | Count panel data models | Panel Poisson methods |
 
-Create `notes/extension_rationale.md` explaining:
+---
 
-1. **What changed after 2018?**
-   - COVID-19 pandemic and emergency VBM expansion
-   - VBM becoming a partisan issue
-   - Continued California Voter's Choice Act rollout
+#### 1.2.3: Machine Learning for Causal Inference
 
-2. **What new variation exists?**
-   - California: Additional counties adopted VCA for 2020, 2022, 2024
-   - Utah and Washington: Already 100% VBM by 2019-2020, limited new variation
-   - The extension will primarily test California's continued rollout
+**Double/Debiased Machine Learning:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Chernozhukov et al. | 2018 | Econometrics J | DML framework | **Core estimation method** |
+| Chernozhukov et al. | 2021 | arXiv | Automatic DML via Riesz regression | **Riesz representer approach** |
+| Chernozhukov et al. | 2022 | Econometrica | Local robustness, sensitivity | Robustness theory |
+| Newey & Robins | 2018 | arXiv | Cross-fitting theory | Theoretical foundation |
 
-3. **Research questions for the extension:**
-   - Do the null partisan effects hold in the post-COVID period?
-   - Is there evidence of heterogeneous effects by time period?
-   - Do event study patterns look similar pre- and post-2018?
+**Generalized Random Forests:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Athey, Tibshirani, Wager | 2019 | AoS | Generalized random forests | **First-stage learner** |
+| Wager & Athey | 2018 | JASA | Causal forests | Treatment effect heterogeneity |
+| Athey & Wager | 2021 | JASA | Policy learning | Optimal policy |
 
-4. **Limitations to acknowledge:**
-   - Less new variation than original paper (most states fully adopted)
-   - Post-2020 period may have different dynamics
-   - Cannot separate VBM effects from COVID effects in 2020
+**Other ML Methods for Causal Inference:**
+| Paper | Year | Journal | Key Contribution | Relevance to Our Paper |
+|-------|------|---------|------------------|------------------------|
+| Belloni, Chernozhukov, Hansen | 2014 | ReStud | LASSO for IV | High-dimensional selection |
+| Farrell | 2015 | JoE | Series estimation with ML | Semiparametric efficiency |
+| Kennedy | 2022 | WIREs | Review of causal ML | Survey of methods |
+
+---
+
+#### 1.2.4: R&D Tax Credits and Innovation Policy
+
+**State R&D Tax Credit Studies:**
+| Paper | Year | Journal | Key Finding | Data/Method |
+|-------|------|---------|-------------|-------------|
+| Fazio, Guzman, Stern | 2020 | EDQ | + formation, null quality | SCP, TWFE |
+| Wilson | 2009 | REStat | R&D credits increase R&D spending | State panel, TWFE |
+| Bloom, Griffith, Van Reenen | 2002 | ReStud | Tax price elasticity of R&D | Cross-country |
+| Rao | 2016 | JPubE | R&D credits, firm innovation | Firm-level, RDD |
+| Dechezleprêtre et al. | 2016 | WP | R&D credits, patents | UK policy change |
+| Howell | 2017 | AER | R&D grants vs. credits | SBIR program |
+
+**Entrepreneurship and Regional Development:**
+| Paper | Year | Journal | Key Finding | Relevance |
+|-------|------|---------|-------------|-----------|
+| Guzman & Stern | 2020 | AEJ:EP | Startup quality measurement | EQI methodology |
+| Guzman | 2019 | Management Science | Regional entrepreneurship | Geography matters |
+| Haltiwanger, Jarmin, Miranda | 2013 | REStat | Young firms create jobs | Startups matter |
+| Glaeser & Kerr | 2009 | JUE | Local industrial structures | Agglomeration |
+| Lerner | 2009 | Book | Government venture capital | Policy evaluation |
+
+**Tax Policy and Firm Behavior:**
+| Paper | Year | Journal | Key Finding | Relevance |
+|-------|------|---------|-------------|-----------|
+| Zwick & Mahon | 2017 | AER | Investment tax credits | Similar policy |
+| Ohrn | 2018 | AER | Bonus depreciation | Corporate response |
+| Curtis & Decker | 2018 | JMCB | State corporate taxes | Tax competition |
+| Giroud & Rauh | 2019 | JPE | State taxes, establishment | Firm location |
+
+---
+
+#### 1.2.5: Applied Econometrics Best Practices
+
+**Specification and Robustness:**
+| Paper | Year | Journal | Key Contribution | How We Apply It |
+|-------|------|---------|------------------|-----------------|
+| Leamer | 1983 | AER | Specification searches | Report all specifications |
+| Sala-i-Martin | 1997 | AER | "I just ran 2 million regressions" | Systematic comparison |
+| Young | 2022 | QJE | Consistency of estimates | Stability across specs |
+| Brodeur et al. | 2020 | AER | P-hacking tests | Pre-registration spirit |
+| Andrews, Kasy | 2019 | AER | Publication bias | Report null results |
+
+**Transparency and Replication:**
+| Paper | Year | Journal | Key Contribution | How We Apply It |
+|-------|------|---------|------------------|-----------------|
+| Christensen & Miguel | 2018 | AEJ:Policy | Transparency in social science | Code availability |
+| Huntington-Klein et al. | 2021 | JBES | Robustness reproducibility | Estimator comparison |
+
+---
+
+#### 1.2.6: Literature Review Deliverables
+
+Create the following outputs:
+
+1. **`notes/literature_review.md`**: Comprehensive annotated bibliography with all papers above, plus any additional relevant papers discovered during research.
+
+2. **`notes/lit_review_narrative.md`**: A 3,000-4,000 word narrative literature review suitable for inclusion in Section 2 of the paper, organized thematically:
+   - The DiD revolution and its discontents
+   - The functional form problem in applied work
+   - Machine learning meets causal inference
+   - What we know about R&D credits and entrepreneurship
+   - Gaps this paper fills
+
+3. **`output/tables/literature_summary.tex`**: A formatted LaTeX table summarizing the key methodological papers and their contributions.
+
+4. **Citation verification**: For every paper cited, confirm:
+   - Exact title
+   - All authors
+   - Journal/outlet
+   - Year
+   - Volume and pages (if published)
+   - DOI or stable URL
+
+### Task 1.3: Document the Methodological Contribution
+
+Create `notes/methodology_contribution.md` explaining:
+
+**1. The Problem with Standard Approaches**
+- Log-plus-one does not identify well-defined causal effects
+- Linear parallel trends incompatible with count outcome support
+- TWFE aggregates heterogeneous effects incorrectly
+
+**2. The Nonlinear Parallel Trends Solution**
+- Impose parallel trends on log-mean scale: E[Y(0)|D=1]/E[Y(0)|D=0] constant
+- Counterfactual: Δ(X) = μ₁₀(X) × μ₀₁(X) / μ₀₀(X)
+- Weighted proportional ATT: E[Y₁/Δ(X) - 1 | D=1]
+
+**3. The Debiased ML Innovation**
+- Flexible nuisance function estimation with ML
+- Neyman-orthogonal scores for root-n inference
+- Cross-fitting for regularization bias correction
+
+**4. Comparison to Wooldridge (2023)**
+- Wooldridge: Parametric (Poisson QMLE)
+- Sween: Semi-parametric (any ML learner)
+- Both target same weighted proportional estimand
 
 ---
 
@@ -228,85 +411,96 @@ Create `notes/extension_rationale.md` explaining:
 
 **Before proceeding, confirm:**
 - [ ] Original paper thoroughly summarized
-- [ ] Literature review completed with verified citations
-- [ ] Extension rationale documented
-- [ ] All papers cited have been verified to exist
+- [ ] Methodological literature documented
+- [ ] Contribution clearly articulated
+- [ ] All citations verified
 
 **Present for review:**
-1. Contents of `notes/original_paper_summary.md`
-2. Literature review table with verification status
-3. Extension rationale summary
+1. Summary of Fazio et al. (2020) findings and methods
+2. Literature review table
+3. Explanation of methodological contribution
 
 **STOP and wait for approval to proceed to Phase 2.**
 
 ---
 
-## PHASE 2: Replication with Original Data
+## PHASE 2: Replication of Original Results
 
-Before collecting new data, first replicate the original results using the original data. This ensures your code is correct before introducing new data.
+### Task 2.1: Load and Examine Data
 
-### Task 2.1: Load and Examine Original Data
+```r
+# Load the analysis dataset
+df <- fread("original/final/scp_pdit_county.csv")
 
-Load the analysis datasets from the original replication materials. For each dataset:
-
-1. Print dimensions (rows × columns)
-2. List all variable names
-3. Show summary statistics
-4. Check for missing values
-5. Verify the data matches what the paper describes
-
-Create `notes/original_data_examination.md` documenting what you find.
-
-### Task 2.2: Replicate Table 2 (Partisan Outcomes)
-
-Using the original data, replicate Table 2 from the paper.
-
-**Specification 1: Basic diff-in-diff**
-```python
-# Outcome: Democratic turnout share (or Democratic vote share)
-# Model: Y_cst = β(VBM_cst) + county_FE + state_year_FE + ε_cst
-# Cluster standard errors at county level
+# Document:
+# - Dimensions: nrow(df), ncol(df)
+# - Counties: length(unique(df$countyfips))
+# - Years: range(df$year)
+# - Treatment variation: table(df$G_rnd)
 ```
 
-**Specification 2: With linear county trends**
-```python
-# Add county-specific linear time trends
+Create `notes/data_examination.md` with:
+- Sample size and panel structure
+- Treatment adoption by cohort
+- Outcome distributions (mean, SD, zeros)
+- Covariate summary statistics
+
+### Task 2.2: Replicate TWFE Estimates
+
+Estimate the original TWFE specification:
+
+```r
+# Log-plus-one outcome, TWFE
+# Y_ct = β(RnD_st) + γ_c + δ_st + ε_ct
+
+library(fixest)
+
+# Basic TWFE
+twfe_basic <- feols(
+  log1p_sfr ~ has_rnd | countyfips + statefips^year,
+  data = df,
+  cluster = "countyfips"
+)
+
+# With continuous treatment intensity
+twfe_intensity <- feols(
+  log1p_sfr ~ rnd | countyfips + statefips^year,
+  data = df,
+  cluster = "countyfips"
+)
 ```
 
-**Specification 3: With quadratic county trends**
-```python
-# Add county-specific quadratic time trends
+### Task 2.3: Implement Callaway-Sant'Anna
+
+```r
+# Using the csdid wrapper from analysis.R
+attgt_cs <- csdid(
+  d = df |>
+    mutate(Outcome = log1p(sfr)) |>
+    filter(Sample_rnd == 1),
+  f = ~ 1,  # No covariates initially
+  e = "dr",  # Built-in doubly-robust
+  c = "nevertreated",
+  b = "varying"
+)
+
+# Aggregate to event study
+es_cs <- aggte(attgt_cs, "dynamic", min_e = -5, max_e = 14)
+ggdid(es_cs)
+
+# Aggregate to overall ATT
+att_cs <- aggte(attgt_cs, "simple")
 ```
 
-**Outcomes to estimate:**
-1. Democratic share of turnout (columns 1-3)
-2. Democratic two-party vote share (columns 4-6)
+### Task 2.4: Compare to Original Paper
 
-Save results to `output/tables/table2_replication.csv`
+Create comparison table:
 
-### Task 2.3: Replicate Table 3 (Participation Outcomes)
-
-Using the same approach, replicate Table 3.
-
-**Outcomes:**
-1. Turnout (ballots cast / CVAP)
-2. VBM share (share of votes cast by mail)
-
-Save results to `output/tables/table3_replication.csv`
-
-### Task 2.4: Compare Replication to Original
-
-Create a comparison table showing:
-
-| Outcome | Specification | Original | Replicated | Difference |
-|---------|--------------|----------|------------|------------|
-| Dem turnout share | Basic | 0.007 | ??? | ??? |
-| ... | ... | ... | ... | ... |
-
-If differences exceed 10% of the original estimate, investigate:
-- Data differences?
-- Specification differences?
-- Package/computation differences?
+| Specification | Original Paper | Replication | Difference |
+|--------------|----------------|-------------|------------|
+| TWFE, log(1+Y) | +X.XX (S.E.) | ??? | ??? |
+| TWFE + covariates | +X.XX (S.E.) | ??? | ??? |
+| CS-DiD, log(1+Y) | N/A | ??? | N/A |
 
 Document any discrepancies in `notes/replication_comparison.md`.
 
@@ -315,489 +509,1215 @@ Document any discrepancies in `notes/replication_comparison.md`.
 ## 🛑 CHECKPOINT 2: Replication Complete
 
 **Before proceeding, confirm:**
-- [ ] Table 2 replicated
-- [ ] Table 3 replicated
-- [ ] Results compared to original
-- [ ] Any discrepancies documented and explained
+- [ ] TWFE estimates computed
+- [ ] Callaway-Sant'Anna estimates computed
+- [ ] Results compared to original paper
+- [ ] Discrepancies documented and explained
 
 **Present for review:**
-1. Replication comparison table
-2. Any issues or discrepancies found
-3. Your code for the main regressions
+1. TWFE coefficient estimates with standard errors
+2. CS-DiD event study plot
+3. Comparison table
+4. Any replication issues
 
 **STOP and wait for approval to proceed to Phase 3.**
 
 ---
 
-## PHASE 3: Extension Data Collection
+## PHASE 3: Comprehensive Estimator Comparison
 
-Now collect new data to extend the analysis through 2024.
+This is the core analytical contribution. You will systematically compare estimates across **four dimensions**:
+1. First-stage estimators (nuisance function learners)
+2. Outcome transformations
+3. Identification assumptions (linear vs. nonlinear parallel trends)
+4. Covariate specifications
 
-### Task 3.1: Identify Data Needs
-
-For the extension, you need to collect **new years of data for the same counties**:
-
-**California** (58 counties):
-- Elections: 2020 gubernatorial recall, 2022 gubernatorial, 2024 presidential
-- VBM adoption: Which additional counties adopted VCA after 2018?
-- California is the key state for the extension (still has variation)
-
-**Utah** (29 counties):
-- Elections: 2020 presidential, 2022 senatorial, 2024 presidential
-- VBM adoption: By 2019, all counties were VBM (no new variation)
-
-**Washington** (39 counties):
-- Elections: 2020 presidential, 2022 senatorial, 2024 presidential
-- VBM adoption: 100% VBM since 2011 (no new variation)
-
-**Data to collect for each county-election:**
-1. Total votes cast
-2. Democratic votes
-3. Republican votes
-4. CVAP (Citizen Voting Age Population) - use 2020 Census/ACS data
-
-### Task 3.2: Collect California Extension Data
-
-**VBM Adoption (Critical!):**
-
-Research which California counties have adopted the Voter's Choice Act:
-- 2018: 5 counties (Madera, Napa, Nevada, Sacramento, San Mateo)
-- 2020: Additional counties joined
-- 2022: More counties joined
-- 2024: Current status
-
-Source: California Secretary of State VCA page
-https://www.sos.ca.gov/elections/voters-choice-act/
-
-Create `data/extension/california_vbm_adoption.csv`:
-```
-county,vca_first_year,source,verified
-Madera,2018,CA SOS,Yes
-Napa,2018,CA SOS,Yes
-...
-```
-
-**Election Results:**
-
-Collect county-level results from California Secretary of State:
-https://www.sos.ca.gov/elections/prior-elections/
-
-For each election, save to `data/extension/california_results_{year}.csv`
-
-### Task 3.3: Collect Utah Extension Data
-
-Utah has been 100% vote-by-mail since 2019, so there's no new VBM variation. However, collect election results for consistency:
-
-Source: Utah Lieutenant Governor / Elections
-https://voteinfo.utah.gov/
-
-### Task 3.4: Collect Washington Extension Data
-
-Washington has been 100% vote-by-mail since 2011, so there's no new VBM variation. Collect election results:
-
-Source: Washington Secretary of State
-https://www.sos.wa.gov/elections/research/
-
-### Task 3.5: Collect CVAP Data
-
-Get updated Citizen Voting Age Population data from Census:
-https://www.census.gov/programs-surveys/decennial-census/about/voting-rights/cvap.html
-
-Use 2020 Census-based estimates for 2020-2024 elections.
-
-### Task 3.6: Data Validation
-
-Before proceeding, validate all collected data:
-
-1. **County coverage**: Do you have all 58 CA + 29 UT + 39 WA = 126 counties?
-2. **Year coverage**: Data for 2020, 2022, 2024 elections?
-3. **Vote totals**: Do they seem reasonable? Compare to known state totals.
-4. **VBM coding**: Double-check California VCA adoption dates against multiple sources.
-
-Create `notes/extension_data_validation.md` documenting all checks.
+The goal is a rigorous, transparent, and exhaustive comparison that leaves no stone unturned.
 
 ---
 
-## 🛑 CHECKPOINT 3: Extension Data Collected
+### Task 3.1: Define the Comparison Framework
+
+Create a systematic grid of specifications. Each cell represents a unique estimator configuration.
+
+#### Dimension 1: First-Stage Estimators
+
+| Estimator Code | Description | R Implementation | Strengths | Weaknesses |
+|----------------|-------------|------------------|-----------|------------|
+| `MEAN` | Simple group means | Manual calculation | Transparent, no tuning | No covariate adjustment |
+| `OLS` | Linear regression | `lm()` or `fastglm(..., family=gaussian())` | Fast, interpretable | Linear functional form |
+| `LOGIT` | Logistic regression (pscore) | `fastglm(..., family=binomial())` | Standard for pscore | Linear in X |
+| `POISSON` | Poisson regression | `fastglm(..., family=poisson())` | Respects non-negativity | Parametric |
+| `LASSO` | L1-penalized regression | `glmnet::cv.glmnet()` | Variable selection | Regularization bias |
+| `RIDGE` | L2-penalized regression | `glmnet::cv.glmnet(alpha=0)` | Stable with collinearity | No variable selection |
+| `ENET` | Elastic net | `glmnet::cv.glmnet(alpha=0.5)` | Compromise | Tuning complexity |
+| `RF` | Random forest (non-honest) | `ranger::ranger()` | Flexible, fast | Overfitting risk |
+| `GRF` | Generalized random forest (honest) | `grf::regression_forest()` | Valid inference, flexible | Slower, tuning |
+| `BART` | Bayesian additive regression trees | `dbarts::bart()` | Uncertainty quantification | Computational cost |
+| `XGB` | Gradient boosted trees | `xgboost::xgboost()` | State-of-art prediction | Black box, tuning |
+
+For each first-stage estimator, document:
+- Hyperparameter choices and tuning procedure
+- Cross-fitting implementation (K=5 folds standard)
+- Computational time
+- Out-of-sample prediction performance (RMSE)
+
+#### Dimension 2: Outcome Transformations
+
+| Transform Code | Formula | Support | Interpretation | Issues |
+|----------------|---------|---------|----------------|--------|
+| `LEVEL` | Y | [0, ∞) | Level effect | Scale-dependent |
+| `LOG` | log(Y) | (0, ∞) | % effect | Undefined at 0 |
+| `LOG1P` | log(1 + Y) | [0, ∞) | Approximate % | Chen & Roth critique |
+| `ASINH` | asinh(Y) | ℝ | Approximate % for large Y | Not % for small Y |
+| `SQRT` | √Y | [0, ∞) | Variance stabilizing | No clear interpretation |
+| `RATE` | Y/Pop | [0, ∞) | Per capita | Ratio interpretation |
+| `PCTL` | Percentile rank | [0, 1] | Distributional | Loses magnitude |
+
+For the nonlinear PT estimators, the outcome is always in levels, but the *link function* determines the parallel trends scale.
+
+#### Dimension 3: Identification Assumptions
+
+| ID Code | Parallel Trends Assumption | Link Function | Counterfactual Formula |
+|---------|---------------------------|---------------|------------------------|
+| `LINEAR` | Additive: E[Y(0)]₁ - E[Y(0)]₀ equal across groups | Identity | Δ = μ¹₀ + μ⁰₁ - μ⁰₀ |
+| `LOGMEAN` | Multiplicative: E[Y(0)]₁ / E[Y(0)]₀ equal | Log | Δ = μ¹₀ × μ⁰₁ / μ⁰₀ |
+| `LOGIT` | Log-odds: logit(E[Y(0)]) parallel | Logit | Δ = expit(logit(μ¹₀) + logit(μ⁰₁) - logit(μ⁰₀)) |
+| `POISSON` | Log-rate: log(E[Y(0)]) parallel | Log (Poisson QMLE) | Same as LOGMEAN |
+
+#### Dimension 4: Covariate Specifications
+
+| Cov Code | Variables | Dimension | Rationale |
+|----------|-----------|-----------|-----------|
+| `NONE` | Intercept only | p = 1 | Unconditional PT |
+| `PARSIM` | Z1-Z7 | p = 7 | Key confounders |
+| `ECON` | Population, employment, wages | p ≈ 15 | Economic conditions |
+| `FULL_X` | All X_ variables | p ≈ 100 | Kitchen sink |
+| `LASSO_SEL` | LASSO-selected from FULL_X | p varies | Data-driven |
+
+---
+
+### Task 3.2: Master Comparison Table Structure
+
+Create the master comparison table with the following structure:
+
+```
+output/tables/master_comparison.csv
+
+Columns:
+- spec_id: Unique specification identifier
+- outcome_var: sfr, eqi, growth, sfr_per1k
+- outcome_transform: LEVEL, LOG1P, ASINH, etc.
+- id_assumption: LINEAR, LOGMEAN
+- first_stage: MEAN, OLS, GRF, etc.
+- covariates: NONE, PARSIM, FULL_X, etc.
+- control_group: nevertreated, notyettreated
+- base_period: varying, universal
+- n_obs: Number of observations
+- n_clusters: Number of counties
+- n_treated: Number of treated county-years
+- att_estimate: Point estimate
+- att_se: Standard error (clustered)
+- att_ci_lower: 95% CI lower bound
+- att_ci_upper: 95% CI upper bound
+- att_pvalue: p-value
+- pre_trend_pvalue: p-value for pre-trend test
+- computation_time_sec: Runtime in seconds
+- notes: Any warnings or issues
+```
+
+---
+
+### Task 3.3: Implement Core Estimator Combinations
+
+#### 3.3.1: Linear Parallel Trends Family
+
+**Specification L1: TWFE Benchmark (Problematic but Standard)**
+```r
+# Classic TWFE with log(1+Y) - the "bad" approach we're critiquing
+twfe_log1p <- feols(
+  log1p_sfr ~ has_rnd | countyfips + statefips^year,
+  data = df |> filter(Sample_rnd == 1),
+  cluster = "countyfips"
+)
+```
+
+**Specification L2: Callaway-Sant'Anna with log(1+Y)**
+```r
+# CS-DiD with built-in DR estimator
+cs_log1p_dr <- csdid(
+  d = df |> mutate(Outcome = log1p(sfr)) |> filter(Sample_rnd == 1),
+  f = ~ 1,
+  e = "dr",
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification L3: Linear PT with OLS nuisance**
+```r
+cs_log1p_ols <- csdid(
+  d = df |> mutate(Outcome = log1p(sfr)) |> filter(Sample_rnd == 1),
+  f = zform,
+  e = my_drreg_linear,  # Uses fastglm with gaussian
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification L4: Linear PT with GRF nuisance (ML)**
+```r
+cs_log1p_grf <- csdid(
+  d = df |> mutate(Outcome = log1p(sfr)) |> filter(Sample_rnd == 1),
+  f = zform,
+  e = my_drml_linear,  # Uses GRF
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification L5: Linear PT with LASSO nuisance**
+```r
+# Implement new estimator
+my_drlasso_linear <- function(y1, y0, D, covariates, ...) {
+  # [Implementation using glmnet for outcome and pscore]
+}
+```
+
+#### 3.3.2: Nonlinear Parallel Trends Family
+
+**Specification N1: Wooldridge (2023) Poisson QMLE**
+```r
+# Implement Wooldridge's approach for comparison
+wooldridge_poisson <- function(data) {
+  # Poisson regression with cohort-time interactions
+  # See Wooldridge (2023) Section 4
+}
+```
+
+**Specification N2: Nonlinear PT, No Covariates**
+```r
+cs_level_nox <- csdid(
+  d = df |> mutate(Outcome = sfr) |> filter(Sample_rnd == 1),
+  f = ~ 1,
+  e = my_nox_nonlinear,
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification N3: Nonlinear PT, Poisson GLM Nuisance**
+```r
+cs_level_poisson <- csdid(
+  d = df |> mutate(Outcome = sfr) |> filter(Sample_rnd == 1),
+  f = zform,
+  e = my_noreg_nonlinear,
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification N4: Nonlinear PT, GRF Nuisance (Main Specification)**
+```r
+cs_level_grf <- csdid(
+  d = df |> mutate(Outcome = sfr) |> filter(Sample_rnd == 1),
+  f = zform,
+  e = my_noml_nonlinear,
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+**Specification N5: Nonlinear PT, GRF with Full Covariates**
+```r
+cs_level_grf_full <- csdid(
+  d = df |> mutate(Outcome = sfr) |> filter(Sample_rnd == 1),
+  f = xform,  # Full covariate set
+  e = my_noml_nonlinear,
+  c = "nevertreated",
+  b = "varying"
+)
+```
+
+---
+
+### Task 3.4: First-Stage Learner Comparison
+
+Create a dedicated analysis comparing first-stage estimators holding everything else fixed.
+
+#### 3.4.1: Prediction Performance
+
+For each first-stage learner, compute out-of-sample prediction metrics:
+
+```r
+# Cross-validated RMSE for each nuisance function
+evaluate_learner <- function(learner, X, Y, D, K = 5) {
+  folds <- sample(1:K, nrow(X), replace = TRUE)
+  
+  results <- map_dfr(1:K, function(k) {
+    train <- folds != k
+    test <- folds == k
+    
+    # Fit on training, predict on test
+    if (learner == "GRF") {
+      model <- regression_forest(X[train,], Y[train], ...)
+      pred <- predict(model, X[test,])$predictions
+    } else if (learner == "LASSO") {
+      # ... etc
+    }
+    
+    tibble(
+      fold = k,
+      rmse = sqrt(mean((Y[test] - pred)^2)),
+      mae = mean(abs(Y[test] - pred)),
+      r2 = cor(Y[test], pred)^2
+    )
+  })
+  
+  return(results)
+}
+```
+
+Create table: `output/tables/first_stage_prediction.csv`
+
+| Learner | Nuisance Function | RMSE | MAE | R² | CV Folds |
+|---------|-------------------|------|-----|----| ---------|
+| OLS | μ⁰₀(X) | | | | 5 |
+| GRF | μ⁰₀(X) | | | | 5 |
+| LASSO | μ⁰₀(X) | | | | 5 |
+| ... | ... | | | | |
+
+#### 3.4.2: ATT Sensitivity to First-Stage
+
+Create figure showing how ATT varies across first-stage learners:
+
+```r
+# Forest plot of ATT estimates by first-stage learner
+learner_comparison <- tribble(
+  ~learner, ~att, ~se, ~ci_lower, ~ci_upper,
+  "Simple Means", ..., ..., ..., ...,
+  "OLS", ..., ..., ..., ...,
+  "LASSO", ..., ..., ..., ...,
+  "Ridge", ..., ..., ..., ...,
+  "Random Forest", ..., ..., ..., ...,
+  "GRF (Honest)", ..., ..., ..., ...,
+  "XGBoost", ..., ..., ..., ...
+)
+
+ggplot(learner_comparison, aes(x = att, y = reorder(learner, att))) +
+  geom_point() +
+  geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper), height = 0.2) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  labs(x = "ATT Estimate", y = "First-Stage Learner",
+       title = "Sensitivity of ATT to First-Stage Learner Choice")
+```
+
+Save as: `output/figures/first_stage_sensitivity.pdf`
+
+#### 3.4.3: GRF Hyperparameter Sensitivity
+
+Vary GRF tuning parameters:
+
+```r
+grf_sensitivity <- expand_grid(
+  num_trees = c(100, 200, 500, 1000, 2000),
+  honesty = c(TRUE, FALSE),
+  min_node_size = c(5, 10, 20)
+) |>
+  mutate(
+    att = map2_dbl(num_trees, honesty, ~{
+      # Re-estimate with these parameters
+    })
+  )
+```
+
+Create heatmap: `output/figures/grf_tuning_sensitivity.pdf`
+
+---
+
+### Task 3.5: Outcome Transformation Comparison
+
+#### 3.5.1: Same Identification, Different Transforms
+
+Holding identification assumption fixed (linear PT), compare across transformations:
+
+| Transformation | ATT | SE | Interpretation | Chen-Roth Valid? |
+|----------------|-----|----|--------------------|------------------|
+| log(1 + Y) | +0.09 | | ~9% increase | ❌ No |
+| asinh(Y) | | | Approx % | ❌ No |
+| √Y | | | Variance stabilized | ❌ No |
+| Y (levels) | | | Startup count | ✅ Yes |
+| Y/Pop×1000 | | | Per 1K pop | ✅ Yes |
+
+#### 3.5.2: Visualization
+
+```r
+# Coefficient plot across transformations
+transform_comparison <- tribble(
+  ~transform, ~att, ~se, ~valid,
+  "log(1+Y)", 0.09, 0.02, FALSE,
+  "asinh(Y)", ..., ..., FALSE,
+  "Levels", ..., ..., TRUE,
+  "Per capita", ..., ..., TRUE
+)
+
+ggplot(transform_comparison, aes(x = att, y = transform, color = valid)) +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = att - 1.96*se, xmax = att + 1.96*se), height = 0.2) +
+  scale_color_manual(values = c("TRUE" = "darkgreen", "FALSE" = "red"),
+                     labels = c("TRUE" = "Valid", "FALSE" = "Invalid")) +
+  labs(title = "ATT Estimates Across Outcome Transformations",
+       subtitle = "Validity per Chen & Roth (2024)")
+```
+
+---
+
+### Task 3.6: Identification Assumption Comparison
+
+This is the **key comparison** in the paper.
+
+#### 3.6.1: Linear vs. Nonlinear PT Side-by-Side
+
+| Specification | PT Assumption | Outcome | ATT | SE | 95% CI | Interpretation |
+|---------------|---------------|---------|-----|----|----|----------------|
+| Standard | Linear | log(1+Y) | +0.09 | | | +9% startups |
+| Proposed | Log-mean | Y (levels) | -0.10 | | | -10% startups |
+
+**Key narrative**: The sign flips from positive to negative when using outcome-consistent identification.
+
+#### 3.6.2: Event Study Comparison
+
+Create a 2×2 panel figure:
+
+```r
+# Panel A: Linear PT, log(1+Y)
+# Panel B: Linear PT, levels
+# Panel C: Nonlinear PT, no covariates  
+# Panel D: Nonlinear PT, with covariates (main spec)
+
+p1 <- ggdid(aggte(cs_log1p_dr, "dynamic")) + 
+  labs(title = "A: Linear PT, log(1+Y)")
+
+p2 <- ggdid(aggte(cs_level_linear, "dynamic")) + 
+  labs(title = "B: Linear PT, Levels")
+
+p3 <- ggdid(aggte(cs_level_nox, "dynamic")) + 
+  labs(title = "C: Nonlinear PT, No Covariates")
+
+p4 <- ggdid(aggte(cs_level_grf, "dynamic")) + 
+  labs(title = "D: Nonlinear PT, GRF Covariates")
+
+(p1 | p2) / (p3 | p4)
+```
+
+Save as: `output/figures/event_study_comparison_4panel.pdf`
+
+#### 3.6.3: Formal Test of Identification Assumptions
+
+While we cannot directly test parallel trends, we can:
+
+1. **Pre-trend test**: Are pre-treatment coefficients jointly zero?
+2. **Placebo outcome test**: Apply estimators to outcomes that shouldn't be affected
+3. **Sensitivity analysis**: How large would PT violations need to be to overturn results?
+
+```r
+# Rambachan & Roth sensitivity analysis
+library(HonestDiD)
+sensitivity <- HonestDiD::createSensitivityResults(
+  betahat = ...,  # Event study coefficients
+  sigma = ...,    # Variance-covariance matrix
+  numPrePeriods = 5,
+  numPostPeriods = 14
+)
+```
+
+---
+
+### Task 3.7: Covariate Specification Comparison
+
+#### 3.7.1: Covariate Balance
+
+First, check covariate balance between treated and control:
+
+```r
+# Balance table
+balance_table <- df |>
+  filter(Sample_rnd == 1, year == 1990) |>
+  group_by(has_rnd) |>
+  summarise(across(starts_with("X_"), list(mean = mean, sd = sd))) |>
+  pivot_longer(-has_rnd) |>
+  # Compute standardized differences
+```
+
+Save as: `output/tables/covariate_balance.csv`
+
+#### 3.7.2: ATT Across Covariate Specifications
+
+| Covariates | N Covariates | ATT (Linear PT) | ATT (Nonlinear PT) | Change in ATT |
+|------------|--------------|-----------------|--------------------| --------------|
+| None | 0 | | | |
+| Parsimonious (Z) | 7 | | | |
+| Economic | ~15 | | | |
+| Full (X) | ~100 | | | |
+| LASSO-selected | varies | | | |
+
+#### 3.7.3: Covariate Importance
+
+For GRF-based estimators, extract variable importance:
+
+```r
+# Variable importance from GRF
+importance <- variable_importance(grf_model)
+importance_df <- tibble(
+  variable = colnames(X),
+  importance = importance
+) |>
+  arrange(desc(importance))
+```
+
+Create: `output/figures/variable_importance.pdf`
+
+---
+
+### Task 3.8: Create Summary Comparison Outputs
+
+#### 3.8.1: The "Specification Curve"
+
+Following Simonsohn, Simmons, and Nelson (2020), create a specification curve showing all estimates:
+
+```r
+# Specification curve analysis
+all_specs <- master_comparison |>
+  arrange(att_estimate) |>
+  mutate(spec_rank = row_number())
+
+# Panel A: Sorted estimates with CIs
+p_curve <- ggplot(all_specs, aes(x = spec_rank, y = att_estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = att_ci_lower, ymax = att_ci_upper), alpha = 0.3) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(y = "ATT Estimate", x = "Specification (sorted)")
+
+# Panel B: Specification indicators
+p_indicators <- all_specs |>
+  select(spec_rank, id_assumption, first_stage, covariates, outcome_transform) |>
+  pivot_longer(-spec_rank) |>
+  ggplot(aes(x = spec_rank, y = name, fill = value)) +
+  geom_tile() +
+  scale_fill_viridis_d()
+
+p_curve / p_indicators
+```
+
+Save as: `output/figures/specification_curve.pdf`
+
+#### 3.8.2: Summary Statistics of Estimates
+
+```r
+# Summarize distribution of estimates
+estimate_summary <- master_comparison |>
+  group_by(id_assumption) |>
+  summarise(
+    n_specs = n(),
+    mean_att = mean(att_estimate),
+    median_att = median(att_estimate),
+    sd_att = sd(att_estimate),
+    min_att = min(att_estimate),
+    max_att = max(att_estimate),
+    pct_positive = mean(att_estimate > 0),
+    pct_significant = mean(att_pvalue < 0.05)
+  )
+```
+
+---
+
+### Task 3.9: Headline Results Table
+
+Create the main results table for the paper:
+
+```
+output/tables/main_results.tex
+
+                        (1)         (2)         (3)         (4)         (5)
+                      TWFE      CS-DiD      CS-DiD     Nonlinear   Nonlinear
+                    log(1+Y)   log(1+Y)   log(1+Y)     Levels      Levels
+                    --------   --------   --------    --------    --------
+Parallel Trends:    Linear     Linear     Linear      Log-mean    Log-mean
+First Stage:        OLS        DR         GRF         None        GRF
+Covariates:         None       None       Z1-Z7       None        Z1-Z7
+------------------------------------------------------------------------
+ATT                 0.090**    0.085**    0.082**    -0.095***   -0.102***
+                   (0.025)    (0.028)    (0.030)     (0.022)     (0.024)
+
+95% CI             [0.04,      [0.03,     [0.02,     [-0.14,     [-0.15,
+                    0.14]       0.14]      0.14]      -0.05]      -0.06]
+
+Pre-trend p-value   0.342      0.285      0.301       0.412       0.389
+
+Observations        X,XXX      X,XXX      X,XXX       X,XXX       X,XXX
+Counties            X,XXX      X,XXX      X,XXX       X,XXX       X,XXX
+Treated county-yrs  X,XXX      X,XXX      X,XXX       X,XXX       X,XXX
+------------------------------------------------------------------------
+Chen-Roth Valid?    No         No         No          Yes         Yes
+------------------------------------------------------------------------
+```
+
+---
+
+## 🛑 CHECKPOINT 3: Comprehensive Comparison Complete
 
 **Before proceeding, confirm:**
-- [ ] California VBM adoption dates verified
-- [ ] Election results collected for 2020-2024
-- [ ] CVAP data obtained
-- [ ] Data validation complete
+- [ ] All estimator combinations implemented
+- [ ] First-stage learner comparison complete
+- [ ] Outcome transformation comparison complete
+- [ ] Identification assumption comparison complete
+- [ ] Covariate specification comparison complete
+- [ ] Master comparison table populated
+- [ ] Specification curve created
+- [ ] Main results table created
 
 **Present for review:**
-1. List of data files created
-2. Summary of California VCA adoption (which counties, which years)
-3. Any data collection issues or gaps
-4. Validation check results
+1. Master comparison table (CSV)
+2. Specification curve figure
+3. 4-panel event study figure
+4. First-stage learner sensitivity figure
+5. Main results table (LaTeX)
+6. Key finding summary: How do estimates differ across dimensions?
 
 **STOP and wait for approval to proceed to Phase 4.**
 
 ---
 
-## PHASE 4: Merge and Prepare Extension Dataset
+## PHASE 4: Robustness and Extensions
 
-### Task 4.1: Standardize Variable Names
+### Task 4.1: Alternative Outcomes
 
-Ensure extension data uses the same variable names as original:
-- `state`
-- `county`
-- `year`
-- `vbm` (=1 if universal VBM in effect)
-- `dem_votes`
-- `rep_votes`
-- `total_votes`
-- `cvap`
+Repeat analysis for:
+- `eqi`: Entrepreneurial Quality Index
+- `growth`: High-growth indicator
+- `sfr_per1k`: Startups per capita
 
-### Task 4.2: Construct Analysis Variables
+### Task 4.2: Alternative Treatment Definitions
 
-```python
-# Two-party Democratic vote share
-dem_voteshare = dem_votes / (dem_votes + rep_votes)
+- Binary treatment: `has_rnd`
+- Continuous intensity: `rnd` (credit rate)
+- 10-year average: `avg_rnd`
 
-# Turnout rate
-turnout = total_votes / cvap
+### Task 4.3: Sensitivity to ML Tuning
 
-# VBM indicator
-vbm = 1 if year >= vbm_first_year else 0
-```
+Vary GRF parameters:
+- `num.trees`: 200, 500, 1000, 2000
+- Honesty: TRUE vs FALSE
 
-### Task 4.3: Append Extension to Original Data
+### Task 4.4: Alternative Control Groups
 
-Create a combined dataset:
-1. Load original analysis data (1996-2018)
-2. Append extension data (2020-2024)
-3. Create indicator for post-2018 period
+- Never-treated only: `c = "nevertreated"`
+- Not-yet-treated: `c = "notyettreated"`
 
-Save as `data/processed/full_analysis_data.csv`
+### Task 4.5: Covariate Specifications
 
-### Task 4.4: Summary Statistics for Extended Sample
+- No covariates: `f = ~ 1`
+- Parsimonious: `f = zform` (Z1-Z7)
+- Full: `f = xform` (all X_ variables)
 
-Create summary statistics table showing:
-- N observations by state and period (1996-2018 vs 2020-2024)
-- Mean and SD of outcomes by period
-- Number of treated (VBM=1) observations by state-period
+### Task 4.6: Placebo and Pre-trend Tests
 
-Save as `output/tables/summary_stats_extended.csv`
+- Test for pre-treatment trends
+- Placebo outcomes (if available)
 
 ---
 
-## 🛑 CHECKPOINT 4: Extension Dataset Ready
+## 🛑 CHECKPOINT 4: Robustness Complete
 
 **Before proceeding, confirm:**
-- [ ] Extension data merged with original
-- [ ] Variables constructed correctly
-- [ ] Summary statistics computed
-- [ ] No unexpected missing values or outliers
+- [ ] Alternative outcomes analyzed
+- [ ] Treatment definitions compared
+- [ ] ML sensitivity assessed
+- [ ] Pre-trend tests conducted
 
 **Present for review:**
-1. Dataset dimensions (total N, N by state, N by period)
-2. Summary statistics table
-3. Any data quality concerns
+1. Robustness summary table
+2. Sensitivity to ML tuning
+3. Pre-trend test results
+4. Any concerning patterns
 
 **STOP and wait for approval to proceed to Phase 5.**
 
 ---
 
-## PHASE 5: Extension Analysis
+## PHASE 5: Paper Writing and Completion
 
-### Task 5.1: Main Results with Extended Data
-
-Re-estimate the main specifications using the full 1996-2024 sample.
-
-**Replicate Table 2 and Table 3 specifications** with extended data.
-
-Compare results:
-| Outcome | Period | Basic | Linear Trends | Quad Trends |
-|---------|--------|-------|---------------|-------------|
-| Dem vote share | 1996-2018 (orig) | ... | ... | ... |
-| Dem vote share | 1996-2024 (extended) | ... | ... | ... |
-
-### Task 5.2: Test for Heterogeneous Effects by Period
-
-Estimate models with interaction terms:
-
-```python
-# Does VBM effect differ post-2018?
-Y_cst = β1(VBM_cst) + β2(VBM_cst × Post2018_t) + β3(Post2018_t) + γ_cs + δ_st + ε_cst
-```
-
-The coefficient β2 tests whether the VBM effect changed after 2018.
-
-### Task 5.3: Separate Estimates by Period
-
-Estimate the main specification separately for:
-1. 1996-2018 (original period)
-2. 2020-2024 (extension period)
-
-Note: The extension period has much less variation (mainly California VCA expansion).
-
-### Task 5.4: California-Specific Analysis
-
-Since California provides most of the new variation, estimate:
-1. California-only models for 2018-2024
-2. Event study around VCA adoption for California counties
-
-### Task 5.5: Event Study Specification
-
-Estimate an event study model (if sufficient data):
-
-```python
-# Relative time to VBM adoption
-# k = years since adoption (negative = pre-adoption)
-Y_cst = Σ_k β_k × 1(t - adoption_year = k) + γ_cs + δ_st + ε_cst
-```
-
-Create event study plot showing:
-- Point estimates by relative year
-- 95% confidence intervals
-- Clear marking of pre- vs post-adoption periods
-
-### Task 5.6: Robustness Checks
-
-1. **Alternative specifications**: Different fixed effects structures
-2. **Dropping 2020**: Test sensitivity to the COVID election year
-3. **Placebo tests**: If applicable
+This phase transforms the analysis into a publication-quality applied econometrics paper. The Sween (2026) draft provides the theoretical framework; your task is to complete the empirical exposition, fill in missing sections, and ensure the paper meets the standards of the *Econometrics Journal* or similar outlets.
 
 ---
 
-## 🛑 CHECKPOINT 5: Extension Analysis Complete
+### Task 5.1: Paper Structure and Standards
+
+#### 5.1.1: Target Journal Standards
+
+The paper should meet the standards of:
+- **Primary target**: *The Econometrics Journal* (where Wooldridge 2023 appeared)
+- **Alternative targets**: *Journal of Econometrics*, *Journal of Business & Economic Statistics*, *Review of Economics and Statistics*
+
+These journals expect:
+- Clear methodological contribution with practical applicability
+- Rigorous theoretical foundations (identification, estimation, inference)
+- Substantive empirical application demonstrating value-added
+- Comprehensive robustness analysis
+- Transparent presentation of limitations
+- Reproducible code and data
+
+#### 5.1.2: Paper Length and Structure
+
+Target length: 40-50 pages (double-spaced) including tables/figures, or approximately:
+- Main text: 10,000-12,000 words
+- Tables: 8-12 tables
+- Figures: 6-10 figures
+- Online appendix: Additional robustness, proofs, details
+
+#### 5.1.3: Final Paper Structure
+
+```
+1. Introduction (2,500-3,000 words)
+2. Related Literature and Empirical Context (2,500-3,000 words)
+   2.1 Methodological Literature
+   2.2 The Startup Cartography Project
+   2.3 State R&D Tax Credits and Prior Evidence
+3. Setup (1,500 words)
+   3.1 Target Parameters
+4. Identification under Nonlinear Parallel Trends (2,000 words)
+5. Semiparametric Estimation and Inference (2,500 words)
+   5.1 Binary Treatments
+   5.2 Continuous Treatments
+   5.3 Multiple Periods and Staggered Adoption
+   5.4 Repeated Cross Sections
+6. Extensions (1,500 words)
+   6.1 Benchmarking Intensive-Margin Effects
+   6.2 Generalized Structural Parallel Trend Assumptions
+7. Empirical Application (3,500-4,000 words)
+   7.1 Data and Empirical Strategy
+   7.2 Replication and Benchmarking Results
+   7.3 Nonlinear Parallel Trends Results
+   7.4 Robustness and Sensitivity
+   7.5 Discussion of Economic Magnitude
+8. Conclusion (800-1,000 words)
+References
+Appendix A: Proofs
+Appendix B: Additional Results
+Appendix C: Data Construction Details
+```
+
+---
+
+### Task 5.2: Write the Introduction (Section 1)
+
+The introduction must accomplish six things in approximately 2,500-3,000 words:
+
+#### 5.2.1: Opening Hook (1-2 paragraphs)
+
+Start with the methodological problem, not the application:
+
+> "Difference-in-differences designs are central to empirical economics, yet standard implementations embed implicit assumptions about functional form that are often inconsistent with the outcomes being studied. When outcomes are counts, bounded proportions, or frequently zero, the parallel trends assumption—imposed on levels, logs, or ad hoc transformations—may generate counterfactual paths that violate the outcome's support or lack clear causal interpretation."
+
+Then pivot to why this matters:
+
+> "These concerns are not merely theoretical. A growing body of work demonstrates that commonly used transformations, such as log(1+Y), do not identify well-defined causal effects (Chen and Roth 2024), while two-way fixed effects estimators aggregate heterogeneous treatment effects in potentially misleading ways (Goodman-Bacon 2021). Applied researchers face a gap between methodological best practices and feasible implementation."
+
+#### 5.2.2: Research Question and Contribution (2-3 paragraphs)
+
+State clearly what the paper does:
+
+> "This paper develops semi-parametric difference-in-differences estimators for discrete and weakly positive outcomes under nonlinear parallel trends assumptions. The framework imposes identification on outcome-consistent link scales—such as the log-mean for counts—while accommodating flexible, high-dimensional covariate adjustment using modern machine learning methods. The estimators target well-defined causal effects, respect support restrictions, and deliver valid inference under standard regularity conditions."
+
+Articulate the three contributions:
+1. **Methodological**: Extends nonlinear DiD (Wooldridge 2023) to ML nuisance estimation
+2. **Applied**: Re-examines R&D tax credits and entrepreneurship
+3. **Practical**: Demonstrates how functional form choices matter for policy conclusions
+
+#### 5.2.3: Preview of Findings (1-2 paragraphs)
+
+Be direct about what you find:
+
+> "Applied to state research and development tax credits, the proposed estimators reveal substantial sensitivity to functional form assumptions. Standard approaches—two-way fixed effects with log-transformed outcomes—suggest that R&D credits increase startup formation by approximately 9%. In contrast, outcome-consistent nonlinear estimates indicate that R&D credits *reduce* startup formation by approximately 10%. This sign reversal is robust to alternative covariate specifications, machine learning algorithms, and sample restrictions."
+
+#### 5.2.4: Why This Application (1 paragraph)
+
+Justify the empirical setting:
+
+> "Entrepreneurship provides an ideal testing ground for these methods. Startup counts are weakly positive, highly skewed, and sparse at fine geographic levels. Proportional effects—percentage changes in startup rates—are the natural object of policy interest. Yet the applied literature routinely employs transformations that do not identify these effects. By revisiting a prominent study with methods designed for the outcome's structure, we demonstrate that methodological choices can reverse substantive conclusions."
+
+#### 5.2.5: Roadmap (1 paragraph)
+
+Brief and functional:
+
+> "Section 2 reviews the related literature and describes the empirical context. Section 3 defines the target parameters. Section 4 establishes identification under nonlinear parallel trends. Section 5 develops the estimators and discusses implementation. Section 6 presents extensions. Section 7 applies the methods to state R&D tax credits. Section 8 concludes."
+
+---
+
+### Task 5.3: Write Section 2 (Literature and Context)
+
+This section has three subsections, each approximately 800-1,000 words.
+
+#### 5.3.1: Section 2.1 - Methodological Literature
+
+Organize into four themes:
+
+**Theme 1: The DiD Revolution**
+- Classic DiD papers (Ashenfelter & Card 1985, Card & Krueger 1994)
+- Modern understanding of identifying assumptions (Angrist & Pischke 2009)
+- Parallel trends as inherently untestable but partially assessable
+
+**Theme 2: Staggered Adoption Problems**
+- Goodman-Bacon (2021) decomposition
+- Negative weighting problem
+- Heterogeneous effects under TWFE
+- Solutions: Callaway-Sant'Anna, Sun-Abraham, de Chaisemartin-D'Haultfœuille, Borusyak et al.
+
+**Theme 3: The Functional Form Problem**
+- Chen & Roth (2024) on log-like transformations
+- Why log(1+Y) doesn't identify % effects
+- Scale-dependence of parallel trends
+- Existing solutions: Wooldridge (2023) Poisson approach
+
+**Theme 4: Machine Learning for Causal Inference**
+- Double/debiased ML (Chernozhukov et al. 2018)
+- Automatic debiased ML (Chernozhukov et al. 2021)
+- GRF and honest inference (Athey, Tibshirani, Wager 2019)
+- Cross-fitting and regularization bias
+
+**Write as flowing prose**, not bullet points. Example:
+
+> "A growing methodological literature extends difference-in-differences designs beyond linear, additive specifications. Wooldridge (2023) develops estimators for count outcomes under log-mean parallel trends, showing that Poisson quasi-maximum likelihood delivers consistent estimates of proportional effects when the ratio of expected outcomes evolves similarly across groups. However, his framework relies on parametric specifications for the conditional mean function. When the outcome depends on high-dimensional covariates or exhibits complex nonlinearities, parametric approaches may introduce specification error that undermines the credibility of the identifying assumption.
+>
+> Recent advances in debiased machine learning offer a path forward. Chernozhukov et al. (2018) show that..."
+
+#### 5.3.2: Section 2.2 - The Startup Cartography Project
+
+Describe the data infrastructure:
+- What it measures (formation, quality, growth events)
+- How it's constructed (business registrations, growth signals)
+- Geographic and temporal coverage
+- Why it's well-suited to this application
+
+#### 5.3.3: Section 2.3 - R&D Tax Credits and Prior Evidence
+
+Summarize Fazio, Guzman, and Stern (2020):
+- Research question and findings
+- Empirical strategy (TWFE with log outcomes)
+- Methodological limitations we address
+
+---
+
+### Task 5.4: Complete Sections 3-6 (Methodology)
+
+The draft has the structure; fill in the "[To be added...]" sections.
+
+#### 5.4.1: Section 5.2 - Continuous Treatments
+
+Write 500-800 words covering:
+- Extension of identification to continuous D
+- Dose-response parameters: ATT_D(d), ATT_S
+- Neyman-orthogonal scores (analogous to binary case)
+- Practical considerations (density estimation, support)
+
+#### 5.4.2: Section 5.3 - Multiple Periods and Staggered Adoption
+
+Write 500-800 words covering:
+- Integration with Callaway-Sant'Anna framework
+- Group-time ATT: θ(g,t) for each cohort g and time t
+- Aggregation schemes: event study, group, overall
+- Inference with clustering
+
+#### 5.4.3: Section 5.4 - Repeated Cross Sections
+
+Write 300-500 words covering:
+- Adaptation when units not observed in both periods
+- Modified identification (no unit FE)
+- Examples where this applies
+
+#### 5.4.4: Section 6 - Extensions
+
+For each extension, write 200-400 words explaining:
+- The setting and why standard methods fail
+- How the framework adapts
+- What changes in identification/estimation
+
+**6.1 Benchmarking Intensive Margins**: How to interpret proportional effects in levels
+
+**6.2 Generalized PT Assumptions**: 
+- Hazard models (survival outcomes)
+- Selection models (censoring/truncation)
+- Discrete choice (multinomial outcomes)
+- Compositional DiD (shares that sum to 1)
+
+---
+
+### Task 5.5: Write Section 7 (Empirical Application)
+
+This is the core of the paper. Write 3,500-4,000 words, heavily integrated with tables and figures.
+
+#### 5.5.1: Section 7.1 - Data and Empirical Strategy (800-1,000 words)
+
+**Paragraph 1**: Data sources
+> "The analysis uses a county-level panel constructed from the Startup Cartography Project and the Panel Database of Incentives and Taxes. The sample covers [N] counties across [M] states observed annually from 1990 to 2010, yielding [T] county-year observations."
+
+**Paragraph 2**: Outcome variables
+> "The primary outcome is the count of new firm formations in each county-year, measured by business registrations recorded in the SCP. This outcome is weakly positive, with a mean of [X], standard deviation of [Y], and [Z]% zeros at the county-year level. Secondary outcomes include..."
+
+**Paragraph 3**: Treatment variables
+> "Treatment is defined by the adoption of state R&D tax credits, with timing and generosity drawn from the PDIT. Figure [X] plots the staggered adoption pattern across states. By 2010, [N] states had adopted some form of R&D credit, with credit rates ranging from [X]% to [Y]%."
+
+**Paragraph 4**: Covariates
+> "We augment the SCP data with county-level covariates capturing local economic conditions. The parsimonious specification includes seven variables: log population, log employment-to-population ratio, log average wage, log baseline startup formation, an indicator for any startups in 1988, the logit of baseline quality, and an indicator for high-growth startups. The full specification adds [X] additional variables..."
+
+**Paragraph 5**: Empirical strategy preview
+> "The empirical strategy proceeds in three steps. First, we replicate the original TWFE analysis to establish a baseline. Second, we apply the Callaway-Sant'Anna estimator to address staggered adoption concerns while maintaining the log-plus-one transformation. Third, we implement the proposed nonlinear DiD estimators, imposing parallel trends on the log-mean scale and using machine learning for covariate adjustment."
+
+Include: **Table 1: Summary Statistics**
+
+#### 5.5.2: Section 7.2 - Replication and Benchmarking (600-800 words)
+
+Present the replication results:
+
+> "Column 1 of Table [X] reports the TWFE estimate using log(1+Y) as the outcome, following Fazio et al. (2020). The coefficient of 0.090 (SE = 0.025) implies that R&D credit adoption is associated with approximately 9% more startups, statistically significant at conventional levels. This estimate closely replicates the original findings."
+
+> "Column 2 applies the Callaway-Sant'Anna estimator to the same outcome. The overall ATT of 0.085 (SE = 0.028) is slightly smaller than TWFE but remains positive and significant. Figure [X] plots the event study, showing no evidence of pre-trends and positive post-treatment effects."
+
+> "These results confirm that addressing staggered adoption alone does not resolve the functional form problem. Both estimators impose linear parallel trends on a transformed outcome that does not identify a well-defined proportional effect."
+
+Include: 
+- **Table 2: Replication Results (TWFE vs. CS-DiD)**
+- **Figure 1: Event Study, log(1+Y) Outcome**
+
+#### 5.5.3: Section 7.3 - Nonlinear Parallel Trends Results (1,000-1,200 words)
+
+This is the key section. Present the main findings clearly:
+
+> "We now turn to estimates under outcome-consistent identification. Column 3 of Table [X] reports the nonlinear DiD estimate without covariates, targeting the weighted proportional ATT under log-mean parallel trends. The point estimate is -0.095 (SE = 0.022), implying that R&D credit adoption *reduces* startup formation by approximately 9.5%. This estimate is opposite in sign to the transformed-outcome results and statistically significant."
+
+> "Column 4 adds the parsimonious covariate set, with nuisance functions estimated by generalized random forests. The estimate is -0.102 (SE = 0.024), slightly larger in magnitude and more precisely estimated. The 95% confidence interval of [-0.15, -0.06] excludes zero and, importantly, excludes the positive effects implied by standard methods."
+
+> "Figure [X] displays the event study under nonlinear parallel trends. The pre-treatment coefficients are close to zero and jointly insignificant (p = 0.41), supporting the identifying assumption. Post-treatment coefficients are uniformly negative, with magnitudes increasing over the first five years before stabilizing."
+
+**Interpretation paragraph**:
+
+> "How should we interpret these results? Under log-mean parallel trends, the estimand captures the average percentage deviation of treated outcomes from their counterfactual values. An estimate of -0.10 implies that, among counties whose states adopted R&D credits, startup formation is approximately 10% lower than it would have been absent the policy. This contrasts sharply with the +9% effect implied by log-transformed linear DiD."
+
+**Reconciling the sign reversal**:
+
+> "The sign reversal arises from two sources. First, the identifying assumption differs: linear parallel trends in log(1+Y) does not imply, and is not implied by, log-mean parallel trends in Y. Second, the estimands differ: even if both assumptions held, they target different parameters. The log(1+Y) coefficient lacks a clear causal interpretation (Chen and Roth 2024), while the weighted proportional ATT is a well-defined average of unit-level percentage effects."
+
+Include:
+- **Table 3: Main Results - Linear vs. Nonlinear PT**
+- **Figure 2: Event Study Comparison (4-panel)**
+- **Figure 3: Specification Curve**
+
+#### 5.5.4: Section 7.4 - Robustness and Sensitivity (800-1,000 words)
+
+Systematically address potential concerns:
+
+**First-stage learner sensitivity**:
+> "Table [X] reports estimates across alternative first-stage learners. The nonlinear PT estimates range from -0.089 (LASSO) to -0.115 (XGBoost), with all point estimates negative and significant. The GRF-based estimate lies near the median of this range, suggesting the main finding is not driven by learner choice."
+
+**Covariate specification**:
+> "Adding the full covariate set (Column 5) yields an estimate of -0.098 (SE = 0.026), essentially unchanged from the parsimonious specification. This stability suggests the seven-variable specification captures the relevant confounding variation."
+
+**Alternative outcomes**:
+> "We replicate the analysis for secondary outcomes. For the Entrepreneurial Quality Index, both linear and nonlinear estimates are close to zero and insignificant, consistent with the original paper's null findings for quality. For the high-growth indicator, the nonlinear estimate is -0.08 (SE = 0.04), directionally consistent with the formation results."
+
+**Alternative treatment definitions**:
+> "Using continuous treatment intensity (credit rate) rather than binary adoption yields similar conclusions. The nonlinear slope estimate implies a [X]% reduction in startups per percentage point of credit rate."
+
+**Placebo and pre-trend tests**:
+> "The joint test for pre-treatment effects yields p = [X], providing no evidence against the identifying assumption. As a placebo, we apply the estimators to county-level population growth, which should not respond to R&D credits. Both linear and nonlinear estimates are close to zero, as expected."
+
+Include:
+- **Table 4: Robustness Across Specifications**
+- **Figure 4: First-Stage Learner Sensitivity**
+- **Table 5: Alternative Outcomes**
+
+#### 5.5.5: Section 7.5 - Economic Magnitude (400-500 words)
+
+Translate statistical findings into economic terms:
+
+> "What is the economic magnitude of these effects? The average treated county has approximately [X] startup formations per year. A 10% reduction implies [Y] fewer startups annually, or [Z] over the post-adoption period in our sample. Aggregating across all treated counties yields approximately [W] 'missing' startups attributable to R&D credit adoption."
+
+> "These magnitudes are large relative to policy expectations. R&D tax credits are intended to stimulate innovation and entrepreneurship by reducing the effective cost of research investment. Our estimates suggest the opposite: that these credits may crowd out new firm formation. One interpretation is that R&D credits favor incumbent firms, who capture the subsidy while new entrants face relatively higher costs..."
+
+> "We caution against strong causal claims. The estimates reflect the average effect under the identifying assumptions, which may not hold. Nonetheless, the reversal from positive to negative effects—depending solely on functional form choices—demonstrates that applied researchers must carefully consider whether their transformations and identifying assumptions are consistent with the outcome's structure."
+
+---
+
+### Task 5.6: Write Section 8 (Conclusion)
+
+Write 800-1,000 words covering:
+
+**Summary of contributions**:
+> "This paper develops semi-parametric difference-in-differences estimators for outcomes that are discrete, bounded, or weakly positive. By imposing identification on outcome-consistent link scales and combining with flexible machine learning methods for covariate adjustment, the framework delivers estimators that respect support restrictions, target well-defined causal effects, and provide valid inference."
+
+**Empirical takeaway**:
+> "Applied to state R&D tax credits, the methods reveal substantial sensitivity to functional form assumptions. The standard finding—that R&D credits increase startup formation—reverses sign under outcome-consistent identification. This reversal is robust across specifications and underscores the importance of aligning methods with outcome structure."
+
+**Limitations**:
+> "Several limitations warrant acknowledgment. First, the identifying assumptions remain untestable. While pre-trend tests support the log-mean parallel trends assumption, they cannot rule out violations. Second, the estimates are local to the support of the data; extrapolation to different policy environments requires additional assumptions. Third, computational costs are non-trivial, particularly for large-dimensional covariate sets."
+
+**Implications for practice**:
+> "For applied researchers, the paper offers practical guidance. When outcomes are counts or bounded, avoid ad hoc transformations. Instead, impose parallel trends on a link scale consistent with the outcome's support. Use machine learning for covariate adjustment to reduce specification error. Report estimates under multiple identifying assumptions to assess sensitivity."
+
+**Future directions**:
+> "Several extensions merit further investigation. Continuous treatment intensity, dynamic treatment effects, and interference across units all present challenges that the current framework addresses only partially. A companion R package, `nldid`, will facilitate implementation in applied work."
+
+---
+
+### Task 5.7: Create All Tables
+
+#### Table 1: Summary Statistics
+```
+Panel A: Outcome Variables
+                        Mean    SD      Min     Max     Zeros (%)
+Startup Formation       XX.X    XX.X    0       XXX     XX.X
+log(1 + Formation)      X.XX    X.XX    0       X.XX    XX.X
+Quality Index           0.XX    0.XX    0       1       XX.X
+High-Growth Indicator   0.XX    0.XX    0       1       XX.X
+
+Panel B: Treatment Variables
+                        Mean    SD      Min     Max
+R&D Credit Adoption     0.XX    0.XX    0       1
+R&D Credit Rate (%)     X.XX    X.XX    0       XX.X
+
+Panel C: Covariates
+...
+```
+
+#### Table 2: Replication Results
+TWFE and CS-DiD with log(1+Y) outcome
+
+#### Table 3: Main Results
+Linear vs. Nonlinear PT comparison (5-6 columns)
+
+#### Table 4: Robustness
+Across first-stage learners, covariate sets, samples
+
+#### Table 5: Alternative Outcomes
+Quality, growth, per capita formation
+
+#### Table 6: First-Stage Prediction Performance
+RMSE, R² for each learner
+
+#### Table 7: Covariate Balance
+Treated vs. control comparisons
+
+#### Table 8: Pre-Trend Tests
+Joint significance tests across specifications
+
+---
+
+### Task 5.8: Create All Figures
+
+#### Figure 1: R&D Tax Credit Adoption Timeline
+Map or timeline showing staggered adoption
+
+#### Figure 2: Event Study - Standard Approach
+log(1+Y) outcome, TWFE or CS-DiD
+
+#### Figure 3: Event Study - Nonlinear PT
+Levels outcome, log-mean PT, 4-panel comparison
+
+#### Figure 4: Specification Curve
+All estimates sorted with specification indicators
+
+#### Figure 5: First-Stage Learner Sensitivity
+Forest plot of ATT across learners
+
+#### Figure 6: Variable Importance
+From GRF, showing which covariates matter
+
+#### Figure 7: Pre-Trends Comparison
+Pre-treatment coefficients under different assumptions
+
+#### Figure 8: Distribution of Outcomes
+Histogram/density of startup counts, highlighting zeros and skewness
+
+---
+
+### Task 5.9: Complete the Appendix
+
+#### Appendix A: Proofs
+- Proof of identification under Assumption 1 (binary treatment)
+- Proof of identification under Assumption 2 (continuous treatment)
+- Derivation of Neyman-orthogonal scores
+- Derivation of Riesz representers for log-mean link
+
+#### Appendix B: Additional Results
+- Full covariate coefficient table
+- State-by-state results
+- Alternative bandwidth/tuning sensitivity
+- Bootstrapped confidence intervals
+
+#### Appendix C: Data Construction
+- Variable definitions
+- Sample restrictions
+- Crosswalks between data sources
+
+---
+
+### Task 5.10: Writing Quality Checklist
+
+Before finalizing, verify:
+
+**Clarity**:
+- [ ] Every variable defined before first use
+- [ ] Every acronym spelled out on first use
+- [ ] Every equation numbered and referenced
+- [ ] Every table and figure referenced in text
+
+**Precision**:
+- [ ] Point estimates reported with standard errors AND confidence intervals
+- [ ] Statistical significance indicated consistently (stars, p-values)
+- [ ] Sample sizes reported for every specification
+- [ ] Clustering level stated for all standard errors
+
+**Rigor**:
+- [ ] Identifying assumptions stated formally
+- [ ] Limitations acknowledged explicitly
+- [ ] Causal language appropriately hedged
+- [ ] Robustness concerns addressed systematically
+
+**Style**:
+- [ ] Active voice preferred
+- [ ] Paragraphs have clear topic sentences
+- [ ] Transitions between sections smooth
+- [ ] No orphan sentences or paragraphs
+
+**Formatting**:
+- [ ] Consistent notation throughout
+- [ ] Tables formatted for journal submission
+- [ ] Figures high-resolution, colorblind-friendly
+- [ ] References complete and consistent
+
+---
+
+## 🛑 CHECKPOINT 5: Paper Draft Complete
 
 **Before proceeding, confirm:**
-- [ ] Main results with extended data
-- [ ] Heterogeneity by period tested
-- [ ] California-specific analysis done
-- [ ] Event study estimated (if feasible)
-- [ ] Robustness checks completed
+- [ ] All sections written (no "[To be added...]" remains)
+- [ ] All tables created and formatted
+- [ ] All figures created and formatted
+- [ ] Appendix complete
+- [ ] References verified and formatted
+- [ ] Writing quality checklist passed
 
 **Present for review:**
-1. Main results tables comparing original vs. extended
-2. Heterogeneity tests (interaction terms)
-3. Event study figure
-4. Key findings summary
+1. Complete paper draft (PDF compiled from LaTeX or clean Markdown)
+2. All tables (as separate files and in paper)
+3. All figures (as separate files and in paper)
+4. Appendix materials
+5. Bibliography file
 
 **STOP and wait for approval to proceed to Phase 6.**
 
 ---
 
-## PHASE 6: Paper Writing
+## PHASE 6: Final Deliverables
 
-### Task 6.1: Abstract (150-200 words)
+### Task 6.1: Organize Code
 
-Write an abstract that:
-- States the research question
-- Describes the data and method (diff-in-diff, three states, 1996-2024)
-- Summarizes findings (replication confirms null, extension shows...)
-- Notes limitations and implications
-
-### Task 6.2: Introduction (~1500 words)
-
-Structure:
-1. **Hook**: Policy relevance of VBM, especially post-COVID
-2. **Research question**: Does universal VBM affect partisan outcomes?
-3. **Approach**: Replicate Thompson et al. (2020), extend to 2024
-4. **Findings**: Preview your results
-5. **Contribution**: What this adds (post-COVID test, methodological exercise)
-6. **Roadmap**: Paper structure
-
-### Task 6.3: Background (~1500 words)
-
-Cover:
-1. **VBM policy landscape**: What is universal VBM? Which states use it?
-2. **Theoretical expectations**: Why might VBM affect partisan outcomes? Why might it not?
-3. **Prior evidence**: Summarize literature from Phase 1
-4. **Post-COVID context**: How 2020 changed the debate
-
-### Task 6.4: Data (~1500 words)
-
-Describe:
-1. **Original data**: Thompson et al. replication materials
-2. **Extension data**: New years collected for CA, UT, WA
-3. **VBM adoption coding**: How treatment is defined (especially California VCA)
-4. **Variable definitions**: Each variable clearly defined
-5. **Summary statistics**: Reference the summary stats table
-
-### Task 6.5: Empirical Strategy (~1500 words)
-
-Explain:
-1. **Difference-in-differences design**: Intuition and formal setup
-2. **Estimating equation**: Present with notation explained
-3. **Identifying assumption**: Parallel trends
-4. **Threats to identification**: What could bias results?
-5. **Extension considerations**: Less new variation, COVID confounds
-
-### Task 6.6: Results (~2500 words)
-
-Present:
-1. **Replication results**: Do you replicate the original findings?
-2. **Extended main results**: Full sample estimates
-3. **Period heterogeneity**: Do effects differ post-2018?
-4. **California analysis**: Focus on where variation exists
-5. **Event study**: Visual evidence on dynamics
-6. **Robustness**: Sensitivity checks
-
-For each result:
-- State the point estimate and confidence interval
-- Interpret the magnitude
-- Compare to original paper findings
-
-### Task 6.7: Discussion and Conclusion (~1000 words)
-
-Address:
-1. **Summary**: What did you find?
-2. **Interpretation**: What do results mean for the VBM debate?
-3. **Limitations**: What can't you conclude?
-4. **Implications**: For policy, for future research
-5. **Conclusion**: Bottom line message
-
-### Task 6.8: Tables and Figures
-
-**Required tables:**
-1. Summary statistics (original and extension periods)
-2. Main results - replication of Table 2
-3. Main results - replication of Table 3
-4. Extended sample results
-5. Period heterogeneity tests
-
-**Required figures:**
-1. Map or timeline of VBM adoption
-2. Event study plot (if estimated)
-3. Comparison of original vs. replicated estimates
-
-### Task 6.9: References
-
-Create bibliography with **only verified citations**.
-
-Use consistent format (e.g., APSA style):
-```
-Gerber, Alan S., Gregory A. Huber, and Seth J. Hill. 2013. "Identifying the Effect of All-Mail Elections on Turnout: Staggered Reform in the Evergreen State." Political Science Research and Methods 1(1): 91-116.
-```
-
----
-
-## 🛑 CHECKPOINT 6: Paper Draft Complete
-
-**Before proceeding, confirm:**
-- [ ] All sections written
-- [ ] Tables and figures created
-- [ ] References verified
-- [ ] Paper is coherent and complete
-
-**Present for review:**
-1. Complete paper draft
-2. All tables and figures
-3. Bibliography
-
-**STOP and wait for approval to proceed to Phase 7.**
-
----
-
-## PHASE 7: Code Organization and Final Deliverables
-
-### Task 7.1: Organize Analysis Code
-
-Structure code files:
+Final code structure:
 ```
 code/
-├── 00_setup.py              # Package imports, paths
-├── 01_examine_original.py   # Review original data
-├── 02_replicate.py          # Replication analysis
-├── 03_collect_extension.py  # Extension data collection
-├── 04_prepare_data.py       # Merge and clean
-├── 05_extension_analysis.py # Extension results
-├── 06_figures.py            # Create figures
-├── 07_tables.py             # Format tables
-└── utils.py                 # Helper functions
+├── 00_setup.R                # Packages, paths, settings
+├── 01_data_prep.R            # Load and prepare data
+├── 02_replication.R          # TWFE and CS-DiD replication
+├── 03_nonlinear_did.R        # Nonlinear estimators
+├── 04_robustness.R           # Sensitivity analyses
+├── 05_figures.R              # Generate all figures
+├── 06_tables.R               # Generate all tables
+└── utils/
+    └── estimators.R          # Custom estimator functions
 ```
 
-### Task 7.2: Create Requirements File
+### Task 6.2: Documentation
 
-```
-# requirements.txt
-pandas>=1.3.0
-numpy>=1.20.0
-statsmodels>=0.12.0
-matplotlib>=3.4.0
-seaborn>=0.11.0
-requests>=2.25.0
-# Add any additional packages used
-```
-
-### Task 7.3: Documentation
-
-Create `README.md` explaining:
+Create comprehensive `README.md`:
 - Project overview
-- How to reproduce results
-- Data sources
-- File structure
+- Data sources and access
+- Software requirements
+- Replication instructions
+- File descriptions
 
-### Task 7.4: Final Validation
+### Task 6.3: Final Validation
 
-Run full pipeline from scratch:
-1. Start with original replication data
-2. Run all code sequentially
-3. Verify outputs match what's in paper
+Run complete pipeline:
+1. Start from raw data
+2. Execute all scripts in order
+3. Verify all outputs match paper
 
 ---
 
 ## 🛑 FINAL CHECKPOINT: Project Complete
 
 **Confirm all deliverables:**
-- [ ] Complete paper (Markdown or PDF)
-- [ ] All analysis code
-- [ ] All data files (or download instructions)
-- [ ] Documentation
-- [ ] Requirements file
+- [ ] Complete paper (LaTeX/PDF)
+- [ ] All analysis code (documented, reproducible)
+- [ ] All output files (tables, figures)
+- [ ] README with replication instructions
+- [ ] Notes documenting all decisions
 
 **Present final deliverables for review.**
 
 ---
 
-## Appendix: Original Paper Key Results (Reference)
+## Appendix: Key Equations Reference
 
-### Table 2: Partisan Outcomes
+### Linear Parallel Trends (Standard DiD)
 
-| | Dem Turnout Share | | | Dem Vote Share | | |
-|---|---|---|---|---|---|---|
-| | (1) | (2) | (3) | (4) | (5) | (6) |
-| VBM | 0.007 | 0.001 | 0.001 | 0.028 | 0.011 | 0.007 |
-| SE | (0.003) | (0.001) | (0.001) | (0.011) | (0.004) | (0.003) |
-| Counties | 87 | 87 | 87 | 126 | 126 | 126 |
-| County FE | Yes | Yes | Yes | Yes | Yes | Yes |
-| State×Year FE | Yes | Yes | Yes | Yes | Yes | Yes |
-| County trends | No | Linear | Quad | No | Linear | Quad |
+**Assumption:**
+$$E[Y_{i1}(0) - Y_{i0}(0) | D_i = 1, X_i] = E[Y_{i1}(0) - Y_{i0}(0) | D_i = 0, X_i]$$
 
-### Table 3: Participation Outcomes
+**Counterfactual:**
+$$\Delta_i(X_i) = E[Y_{i0} | D_i = 1, X_i] + E[Y_{i1} | D_i = 0, X_i] - E[Y_{i0} | D_i = 0, X_i]$$
 
-| | Turnout | | | VBM Share | | |
-|---|---|---|---|---|---|---|
-| | (1) | (2) | (3) | (4) | (5) | (6) |
-| VBM | 0.021 | 0.022 | 0.021 | 0.186 | 0.157 | 0.136 |
-| SE | (0.009) | (0.007) | (0.008) | (0.027) | (0.035) | (0.085) |
-| Counties | 126 | 126 | 126 | 58 | 58 | 58 |
-| County FE | Yes | Yes | Yes | Yes | Yes | Yes |
-| State×Year FE | Yes | Yes | Yes | Yes | Yes | Yes |
-| County trends | No | Linear | Quad | No | Linear | Quad |
+**ATT:**
+$$ATT = E[Y_{i1} - \Delta_i(X_i) | D_i = 1]$$
+
+### Nonlinear Parallel Trends (Log-Mean)
+
+**Assumption:**
+$$\frac{E[Y_{i1}(0) | D_i = 1, X_i]}{E[Y_{i0}(0) | D_i = 1, X_i]} = \frac{E[Y_{i1}(0) | D_i = 0, X_i]}{E[Y_{i0}(0) | D_i = 0, X_i]}$$
+
+**Counterfactual:**
+$$\Delta_i(X_i) = \frac{\mu^1_0(X_i) \cdot \mu^0_1(X_i)}{\mu^0_0(X_i)}$$
+
+**Weighted Proportional ATT:**
+$$ATT_{\omega,\%} = E\left[\frac{Y_{i1}}{\Delta_i(X_i)} - 1 \bigg| D_i = 1\right]$$
+
+### Neyman-Orthogonal Score (Log-Mean)
+
+$$\psi(W_i; \theta, g) = \frac{D_i}{\pi}\left[\frac{\mu^1_1(X_i)}{\Delta_i(X_i)} - 1 - \theta + \text{debiasing terms}\right]$$
+
+Where debiasing terms correct for first-stage estimation error in $\mu^d_t(X)$.
 
 ---
 
-## Quality Standards Reminder
+## Quality Standards
 
 ### Statistical Standards
 - Report point estimates with standard errors AND confidence intervals
 - Cluster standard errors at county level
-- Interpret null results correctly ("cannot reject null" ≠ "no effect")
+- Use cross-fitting for all ML-based estimates
+- Set seeds for reproducibility
 
 ### Writing Standards
-- Clear, active prose
-- Define all variables and acronyms
-- Appropriate hedging on causal claims
+- Clear, precise econometric language
+- Define all notation before use
+- Interpret magnitudes economically
+- Acknowledge limitations honestly
 
 ### Reproducibility Standards
 - All results reproducible from code
-- No manual steps
-- Seeds set for any stochastic elements
+- No manual data manipulation
+- Seeds set for stochastic elements
+- Package versions documented
 
 ### Citation Standards
 - Every cited paper must be verified to exist
